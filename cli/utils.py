@@ -127,6 +127,9 @@ def select_shallow_thinking_agent(provider) -> str:
 
     # Define shallow thinking llm engine options with their corresponding model names
     SHALLOW_AGENT_OPTIONS = {
+        "claude-code": [
+            ("Claude Code - Uses your Claude Pro subscription (no API cost!)", "claude-code"),
+        ],
         "openai": [
             ("GPT-4o-mini - Fast and efficient for quick tasks", "gpt-4o-mini"),
             ("GPT-4.1-nano - Ultra-lightweight model for basic operations", "gpt-4.1-nano"),
@@ -185,6 +188,9 @@ def select_deep_thinking_agent(provider) -> str:
 
     # Define deep thinking llm engine options with their corresponding model names
     DEEP_AGENT_OPTIONS = {
+        "claude-code": [
+            ("Claude Code - Uses your Claude Pro subscription (no API cost!)", "claude-code"),
+        ],
         "openai": [
             ("GPT-4.1-nano - Ultra-lightweight model for basic operations", "gpt-4.1-nano"),
             ("GPT-4.1-mini - Compact model with good performance", "gpt-4.1-mini"),
@@ -240,21 +246,27 @@ def select_deep_thinking_agent(provider) -> str:
     return choice
 
 def select_llm_provider() -> tuple[str, str]:
-    """Select the OpenAI api url using interactive selection."""
-    # Define OpenAI api options with their corresponding endpoints
-    BASE_URLS = [
-        ("OpenAI", "https://api.openai.com/v1"),
-        ("Anthropic", "https://api.anthropic.com/"),
-        ("Google", "https://generativelanguage.googleapis.com/v1"),
-        ("Openrouter", "https://openrouter.ai/api/v1"),
-        ("Ollama", "http://localhost:11434/v1"),        
+    """Select the LLM provider using interactive selection.
+
+    Returns:
+        tuple: (provider_id, backend_url) where provider_id is a simple identifier
+               like 'claude-code', 'openai', etc.
+    """
+    # Define LLM provider options: (display_name, provider_id, backend_url)
+    PROVIDERS = [
+        ("Claude-Code (Uses your Claude Pro subscription - FREE!)", "claude-code", None),
+        ("OpenAI", "openai", "https://api.openai.com/v1"),
+        ("Anthropic", "anthropic", "https://api.anthropic.com/"),
+        ("Google", "google", "https://generativelanguage.googleapis.com/v1"),
+        ("Openrouter", "openrouter", "https://openrouter.ai/api/v1"),
+        ("Ollama", "ollama", "http://localhost:11434/v1"),
     ]
-    
+
     choice = questionary.select(
         "Select your LLM Provider:",
         choices=[
-            questionary.Choice(display, value=(display, value))
-            for display, value in BASE_URLS
+            questionary.Choice(display, value=(provider_id, url))
+            for display, provider_id, url in PROVIDERS
         ],
         instruction="\n- Use arrow keys to navigate\n- Press Enter to select",
         style=questionary.Style(
@@ -265,12 +277,12 @@ def select_llm_provider() -> tuple[str, str]:
             ]
         ),
     ).ask()
-    
+
     if choice is None:
-        console.print("\n[red]no OpenAI backend selected. Exiting...[/red]")
+        console.print("\n[red]No LLM provider selected. Exiting...[/red]")
         exit(1)
-    
-    display_name, url = choice
-    print(f"You selected: {display_name}\tURL: {url}")
-    
-    return display_name, url
+
+    provider_id, url = choice
+    print(f"You selected: {provider_id}\tURL: {url}")
+
+    return provider_id, url
