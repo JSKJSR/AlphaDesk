@@ -1,0 +1,31 @@
+# Core LLM Framework - Anthropic Claude Only
+langchain-anthropic>=0.1.0
+langgraph>=0.0.30
+
+# Data Sources
+yfinance>=0.2.60
+pandas>=2.0.0
+numpy>=1.24.0
+
+# News & Sentiment
+feedparser>=6.0.0
+praw>=7.7.0
+
+# Technical Analysis
+stockstats>=0.6.0
+
+# Storage & Caching
+chromadb>=0.4.0
+
+# CLI Interface
+rich>=13.0.0
+questionary>=2.0.0
+
+# Utilities
+typing-extensions
+requests>=2.31.0
+tqdm>=4.65.0
+pytz>=2023.3
+python-dotenv>=1.0.0
+setuptools
+parsel
