@@ -4,7 +4,16 @@ from typing import Annotated
 from .local import get_YFin_data, get_finnhub_news, get_finnhub_company_insider_sentiment, get_finnhub_company_insider_transactions, get_simfin_balance_sheet, get_simfin_cashflow, get_simfin_income_statements, get_reddit_global_news, get_reddit_company_news
 from .y_finance import get_YFin_data_online, get_stock_stats_indicators_window, get_balance_sheet as get_yfinance_balance_sheet, get_cashflow as get_yfinance_cashflow, get_income_statement as get_yfinance_income_statement, get_insider_transactions as get_yfinance_insider_transactions
 from .google import get_google_news
-from .openai import get_stock_news_openai, get_global_news_openai, get_fundamentals_openai
+
+# Optional: OpenAI data vendor (only if openai package is installed)
+get_stock_news_openai = None
+get_global_news_openai = None
+get_fundamentals_openai = None
+try:
+    from .openai import get_stock_news_openai, get_global_news_openai, get_fundamentals_openai
+except ImportError:
+    pass  # OpenAI not installed - these vendors won't be available
+
 from .alpha_vantage import (
     get_stock as get_alpha_vantage_stock,
     get_indicator as get_alpha_vantage_indicator,
@@ -78,7 +87,6 @@ VENDOR_METHODS = {
     # fundamental_data
     "get_fundamentals": {
         "alpha_vantage": get_alpha_vantage_fundamentals,
-        "openai": get_fundamentals_openai,
     },
     "get_balance_sheet": {
         "alpha_vantage": get_alpha_vantage_balance_sheet,
@@ -98,12 +106,11 @@ VENDOR_METHODS = {
     # news_data
     "get_news": {
         "alpha_vantage": get_alpha_vantage_news,
-        "openai": get_stock_news_openai,
         "google": get_google_news,
         "local": [get_finnhub_news, get_reddit_company_news, get_google_news],
     },
     "get_global_news": {
-        "openai": get_global_news_openai,
+        "google": get_google_news,  # Use google news as fallback
         "local": get_reddit_global_news
     },
     "get_insider_sentiment": {
@@ -115,6 +122,14 @@ VENDOR_METHODS = {
         "local": get_finnhub_company_insider_transactions,
     },
 }
+
+# Add OpenAI vendors only if available
+if get_fundamentals_openai is not None:
+    VENDOR_METHODS["get_fundamentals"]["openai"] = get_fundamentals_openai
+if get_stock_news_openai is not None:
+    VENDOR_METHODS["get_news"]["openai"] = get_stock_news_openai
+if get_global_news_openai is not None:
+    VENDOR_METHODS["get_global_news"]["openai"] = get_global_news_openai
 
 def get_category_for_method(method: str) -> str:
     """Get the category that contains the specified method."""

@@ -27,8 +27,8 @@ DEFAULT_CONFIG = {
         "news_data": "google",                # FREE - Google News
     },
     # Tool-level configuration (takes precedence over category-level)
-    # Only get_fundamentals requires Alpha Vantage (optional - will fail gracefully if no key)
     "tool_vendors": {
         "get_fundamentals": "alpha_vantage",  # Requires ALPHA_VANTAGE_API_KEY (free tier available)
+        "get_global_news": "google",          # Use Google News for global news
     },
 }
