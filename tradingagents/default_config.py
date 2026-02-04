@@ -17,17 +17,17 @@ DEFAULT_CONFIG = {
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,
     "max_recur_limit": 100,
-    # Data vendor configuration
+    # Data vendor configuration - Prioritize FREE sources (yfinance, google)
     # Category-level configuration (default for all tools in category)
     "data_vendors": {
-        "core_stock_apis": "yfinance",       # Options: yfinance, alpha_vantage, local
-        "technical_indicators": "yfinance",  # Options: yfinance, alpha_vantage, local
-        "fundamental_data": "alpha_vantage", # Options: openai, alpha_vantage, local
-        "news_data": "google",               # Options: openai, alpha_vantage, google, local
+        "core_stock_apis": "yfinance",        # FREE - Yahoo Finance
+        "technical_indicators": "yfinance",   # FREE - Yahoo Finance
+        "fundamental_data": "yfinance",       # FREE - Yahoo Finance (balance sheet, cashflow, income)
+        "news_data": "google",                # FREE - Google News
     },
     # Tool-level configuration (takes precedence over category-level)
+    # Only get_fundamentals requires Alpha Vantage (optional - will fail gracefully if no key)
     "tool_vendors": {
-        # Example: "get_stock_data": "alpha_vantage",  # Override category default
-        # Example: "get_news": "openai",               # Override category default
+        "get_fundamentals": "alpha_vantage",  # Requires ALPHA_VANTAGE_API_KEY (free tier available)
     },
 }
