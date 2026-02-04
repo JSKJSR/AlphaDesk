@@ -1,6 +1,10 @@
-# Core LLM Framework - Anthropic Claude Only
-langchain-anthropic>=0.1.0
-langgraph>=0.0.30
+# Core LLM Framework
+langchain-core>=0.1.0       # Required for LangChain base classes
+langgraph>=0.0.30           # Agent orchestration
+
+# Optional: Only needed if using API providers instead of Claude Code CLI
+# langchain-anthropic>=0.1.0  # Uncomment for Anthropic API
+# langchain-openai>=0.1.0     # Uncomment for OpenAI API
 
 # Data Sources
 yfinance>=0.2.60
@@ -29,3 +33,4 @@ pytz>=2023.3
 python-dotenv>=1.0.0
 setuptools
 parsel
+pydantic>=2.0.0

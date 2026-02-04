@@ -6,11 +6,30 @@ import json
 from datetime import date
 from typing import Dict, Any, Tuple, List, Optional
 
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import ChatGoogleGenerativeAI
+# Optional LLM providers - only import if installed
+ChatOpenAI = None
+ChatAnthropic = None
+ChatGoogleGenerativeAI = None
+
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    pass
+
+try:
+    from langchain_anthropic import ChatAnthropic
+except ImportError:
+    pass
+
+try:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+except ImportError:
+    pass
 
 from langgraph.prebuilt import ToolNode
+
+# Claude Code CLI wrapper (uses Claude Pro subscription instead of API)
+from tradingagents.llm import ClaudeCodeChat
 
 from tradingagents.agents import *
 from tradingagents.default_config import DEFAULT_CONFIG
@@ -72,17 +91,29 @@ class TradingAgentsGraph:
         )
 
         # Initialize LLMs
-        if self.config["llm_provider"].lower() == "openai" or self.config["llm_provider"] == "ollama" or self.config["llm_provider"] == "openrouter":
+        provider = self.config["llm_provider"].lower()
+
+        if provider == "claude-code":
+            # Use Claude Code CLI (uses your Claude Pro subscription - no API key needed)
+            self.deep_thinking_llm = ClaudeCodeChat(timeout=600)  # 10 min timeout for deep thinking
+            self.quick_thinking_llm = ClaudeCodeChat(timeout=300)  # 5 min timeout for quick tasks
+        elif provider in ("openai", "ollama", "openrouter"):
+            if ChatOpenAI is None:
+                raise ImportError("langchain-openai not installed. Run: pip install langchain-openai")
             self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
             self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
-        elif self.config["llm_provider"].lower() == "anthropic":
+        elif provider == "anthropic":
+            if ChatAnthropic is None:
+                raise ImportError("langchain-anthropic not installed. Run: pip install langchain-anthropic")
             self.deep_thinking_llm = ChatAnthropic(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
             self.quick_thinking_llm = ChatAnthropic(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
-        elif self.config["llm_provider"].lower() == "google":
+        elif provider == "google":
+            if ChatGoogleGenerativeAI is None:
+                raise ImportError("langchain-google-genai not installed. Run: pip install langchain-google-genai")
             self.deep_thinking_llm = ChatGoogleGenerativeAI(model=self.config["deep_think_llm"])
             self.quick_thinking_llm = ChatGoogleGenerativeAI(model=self.config["quick_think_llm"])
         else:
-            raise ValueError(f"Unsupported LLM provider: {self.config['llm_provider']}")
+            raise ValueError(f"Unsupported LLM provider: {provider}")
         
         # Initialize memories
         self.bull_memory = FinancialSituationMemory("bull_memory", self.config)
