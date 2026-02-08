@@ -35,11 +35,11 @@ class FinancialSituationMemory:
         self.chroma_client = chromadb.Client(Settings(allow_reset=True))
 
         if self.use_openai_embeddings:
-            # Create collection without embedding function (we'll provide embeddings manually)
-            self.situation_collection = self.chroma_client.create_collection(name=name)
+            # Get or create collection without embedding function (we'll provide embeddings manually)
+            self.situation_collection = self.chroma_client.get_or_create_collection(name=name)
         else:
             # Use ChromaDB's default embedding function
-            self.situation_collection = self.chroma_client.create_collection(
+            self.situation_collection = self.chroma_client.get_or_create_collection(
                 name=name,
                 metadata={"hnsw:space": "cosine"}
             )

@@ -390,18 +390,88 @@ def get_insider_transactions(
     try:
         ticker_obj = yf.Ticker(ticker.upper())
         data = ticker_obj.insider_transactions
-        
+
         if data is None or data.empty:
             return f"No insider transactions data found for symbol '{ticker}'"
-            
+
         # Convert to CSV string for consistency with other functions
         csv_string = data.to_csv()
-        
+
         # Add header information
         header = f"# Insider Transactions data for {ticker.upper()}\n"
         header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+
         return header + csv_string
-        
+
     except Exception as e:
         return f"Error retrieving insider transactions for {ticker}: {str(e)}"
+
+
+def get_fundamentals(
+    ticker: Annotated[str, "ticker symbol of the company"],
+    curr_date: Annotated[str, "current date (not used for yfinance)"] = None
+):
+    """Get company fundamentals data from yfinance."""
+    try:
+        ticker_obj = yf.Ticker(ticker.upper())
+        info = ticker_obj.info
+
+        if not info or len(info) == 0:
+            return f"No fundamentals data found for symbol '{ticker}'"
+
+        # Extract key fundamental metrics
+        fundamental_data = []
+
+        # Valuation metrics
+        valuation_keys = [
+            'marketCap', 'enterpriseValue', 'trailingPE', 'forwardPE',
+            'pegRatio', 'priceToBook', 'priceToSalesTrailing12Months'
+        ]
+
+        # Profitability metrics
+        profitability_keys = [
+            'profitMargins', 'operatingMargins', 'grossMargins',
+            'returnOnAssets', 'returnOnEquity'
+        ]
+
+        # Growth metrics
+        growth_keys = [
+            'revenueGrowth', 'earningsGrowth', 'earningsQuarterlyGrowth'
+        ]
+
+        # Financial health
+        health_keys = [
+            'currentRatio', 'quickRatio', 'debtToEquity', 'totalDebt', 'totalCash'
+        ]
+
+        # Dividend metrics
+        dividend_keys = [
+            'dividendYield', 'dividendRate', 'payoutRatio'
+        ]
+
+        # Company info
+        info_keys = [
+            'longName', 'sector', 'industry', 'fullTimeEmployees', 'country'
+        ]
+
+        output = f"# Fundamentals data for {ticker.upper()}\n"
+        output += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+
+        def format_section(title, keys):
+            section = f"\n## {title}\n"
+            for key in keys:
+                if key in info and info[key] is not None:
+                    section += f"- {key}: {info[key]}\n"
+            return section
+
+        output += format_section("Company Information", info_keys)
+        output += format_section("Valuation Metrics", valuation_keys)
+        output += format_section("Profitability", profitability_keys)
+        output += format_section("Growth", growth_keys)
+        output += format_section("Financial Health", health_keys)
+        output += format_section("Dividends", dividend_keys)
+
+        return output
+
+    except Exception as e:
+        return f"Error retrieving fundamentals for {ticker}: {str(e)}"

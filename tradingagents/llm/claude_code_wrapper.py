@@ -45,7 +45,7 @@ class ClaudeCodeChat(BaseChatModel):
 
     model_name: str = Field(default="claude-code", description="Model identifier")
     timeout: int = Field(default=300, description="Timeout in seconds for CLI calls")
-    max_turns: int = Field(default=1, description="Max conversation turns")
+    max_turns: int = Field(default=10, description="Max conversation turns for multi-step tasks")
     bound_tools: List[Any] = Field(default_factory=list, description="Bound tools")
 
     @property
@@ -166,9 +166,17 @@ If you don't need to use any tools, just respond normally.
 
         return cleaned_text, tool_calls
 
-    def _call_claude_code(self, prompt: str) -> str:
+    def _call_claude_code(self, prompt: str, retry_count: int = 0) -> str:
         """Call Claude Code CLI and return the response."""
+        import time
+        max_retries = 3
+
         try:
+            # Truncate very long prompts to avoid CLI issues
+            max_prompt_len = 50000
+            if len(prompt) > max_prompt_len:
+                prompt = prompt[:max_prompt_len] + "\n\n[Prompt truncated due to length]"
+
             # Use claude CLI with print mode (non-interactive)
             # --print (-p): Print response and exit
             # --output-format text: Get plain text output
@@ -185,12 +193,38 @@ If you don't need to use any tools, just respond normally.
             )
 
             if result.returncode != 0:
-                error_msg = result.stderr or "Unknown error"
-                raise RuntimeError(f"Claude Code CLI error: {error_msg}")
+                error_msg = result.stderr.strip() if result.stderr else ""
+                stdout_msg = result.stdout.strip() if result.stdout else ""
 
-            return result.stdout.strip()
+                # Combine error info
+                full_error = f"stderr: {error_msg}" if error_msg else ""
+                if stdout_msg:
+                    full_error += f" stdout: {stdout_msg[:500]}" if full_error else f"stdout: {stdout_msg[:500]}"
+                if not full_error:
+                    full_error = f"Exit code {result.returncode}"
+
+                # Retry on transient errors
+                if retry_count < max_retries:
+                    print(f"Claude CLI error (attempt {retry_count + 1}/{max_retries}): {full_error[:200]}")
+                    time.sleep(2 ** retry_count)  # Exponential backoff
+                    return self._call_claude_code(prompt, retry_count + 1)
+
+                raise RuntimeError(f"Claude Code CLI error: {full_error}")
+
+            response = result.stdout.strip()
+            if not response:
+                if retry_count < max_retries:
+                    print(f"Empty response (attempt {retry_count + 1}/{max_retries}), retrying...")
+                    time.sleep(2 ** retry_count)
+                    return self._call_claude_code(prompt, retry_count + 1)
+                raise RuntimeError("Claude Code CLI returned empty response")
+
+            return response
 
         except subprocess.TimeoutExpired:
+            if retry_count < max_retries:
+                print(f"Timeout (attempt {retry_count + 1}/{max_retries}), retrying...")
+                return self._call_claude_code(prompt, retry_count + 1)
             raise RuntimeError(f"Claude Code CLI timed out after {self.timeout} seconds")
         except FileNotFoundError:
             raise RuntimeError(

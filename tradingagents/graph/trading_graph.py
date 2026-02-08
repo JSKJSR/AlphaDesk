@@ -95,9 +95,9 @@ class TradingAgentsGraph:
 
         if provider == "claude-code":
             # Use Claude Code CLI (uses your Claude Pro subscription - no API key needed)
-            # Long timeouts needed as CLI can be slow with complex prompts
-            self.deep_thinking_llm = ClaudeCodeChat(timeout=900)   # 15 min timeout for deep thinking
-            self.quick_thinking_llm = ClaudeCodeChat(timeout=600)  # 10 min timeout for quick tasks
+            # Long timeouts and high max_turns needed for multi-agent analysis
+            self.deep_thinking_llm = ClaudeCodeChat(timeout=900, max_turns=15)   # Deep thinking with more turns
+            self.quick_thinking_llm = ClaudeCodeChat(timeout=600, max_turns=10)  # Quick tasks
         elif provider in ("openai", "ollama", "openrouter"):
             if ChatOpenAI is None:
                 raise ImportError("langchain-openai not installed. Run: pip install langchain-openai")

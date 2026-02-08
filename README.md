@@ -25,11 +25,163 @@
 
 ---
 
-# TradingAgents: Multi-Agents LLM Financial Trading Framework 
+# TradingAgents: Multi-Agents LLM Financial Trading Framework
 
 > 🎉 **TradingAgents** officially released! We have received numerous inquiries about the work, and we would like to express our thanks for the enthusiasm in our community.
 >
 > So we decided to fully open-source the framework. Looking forward to building impactful projects with you!
+
+---
+
+## Claude Code Edition (No API Keys Required!)
+
+This fork has been modified to work with **Claude Code CLI** instead of paid APIs. If you have a Claude Pro subscription, you can run the entire multi-agent analysis **for free** - no OpenAI or Anthropic API keys needed!
+
+### Quick Start
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Run the Bloomberg-style Web UI
+streamlit run tradingagents/ui/app.py
+
+# 3. Open http://localhost:8502 in your browser
+```
+
+### What's Different in This Fork?
+
+| Feature | Original | Claude Code Edition |
+|---------|----------|---------------------|
+| LLM Provider | OpenAI API (paid) | Claude Code CLI (free with Pro) |
+| Data Sources | Alpha Vantage (API key) | yfinance + Google News (free) |
+| Interface | CLI only | CLI + Bloomberg-style Web UI |
+| Setup | Multiple API keys | Just authenticate Claude Code once |
+
+---
+
+## How It Works (Simple Explanation)
+
+TradingAgents uses multiple AI "agents" that work together like a real trading firm. Here's the step-by-step workflow:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    TRADINGAGENTS WORKFLOW                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  STEP 1: DATA GATHERING (4 Analyst Agents)                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │
+│  │ Market   │ │ Social   │ │  News    │ │Fundament │           │
+│  │ Analyst  │ │ Analyst  │ │ Analyst  │ │ Analyst  │           │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘           │
+│       │            │            │            │                   │
+│       ▼            ▼            ▼            ▼                   │
+│  [Technical]  [Sentiment]  [Global     [Balance                 │
+│   Indicators   & Social     News]       Sheet,                  │
+│   RSI, MACD]   Media]                   P/E, etc]               │
+│                                                                  │
+│  STEP 2: INVESTMENT DEBATE (Bull vs Bear)                       │
+│  ┌──────────────────────────────────────────┐                   │
+│  │  🐂 Bull Analyst: "Stock will go UP!"    │                   │
+│  │  🐻 Bear Analyst: "Stock will go DOWN!"  │                   │
+│  │  ⚖️  Judge decides winner               │                   │
+│  └──────────────────────────────────────────┘                   │
+│                                                                  │
+│  STEP 3: TRADER CREATES PLAN                                    │
+│  ┌──────────────────────────────────────────┐                   │
+│  │  📈 Trader reviews all reports           │                   │
+│  │  Creates detailed trading strategy        │                   │
+│  └──────────────────────────────────────────┘                   │
+│                                                                  │
+│  STEP 4: RISK ASSESSMENT (3-Way Debate)                         │
+│  ┌──────────────────────────────────────────┐                   │
+│  │  🔥 Risky: "Take big position!"          │                   │
+│  │  🛡️  Safe: "Be conservative!"            │                   │
+│  │  ⚖️  Neutral: "Balance both views"       │                   │
+│  │  🎯 Risk Manager makes final call        │                   │
+│  └──────────────────────────────────────────┘                   │
+│                                                                  │
+│  STEP 5: FINAL DECISION                                         │
+│  ┌──────────────────────────────────────────┐                   │
+│  │         ████  BUY / SELL / HOLD  ████    │                   │
+│  └──────────────────────────────────────────┘                   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### The 5 Steps Explained
+
+1. **Analyst Team Gathers Data**
+   - **Market Analyst**: Looks at price charts and technical indicators (RSI, MACD, Moving Averages)
+   - **Social Analyst**: Checks social media buzz and public sentiment
+   - **News Analyst**: Reviews recent news and global events
+   - **Fundamentals Analyst**: Examines company financials (revenue, profits, debt)
+
+2. **Bull vs Bear Debate**
+   - Two AI researchers argue opposite sides
+   - Bull makes the case for buying
+   - Bear makes the case for selling
+   - A judge weighs both arguments
+
+3. **Trader Creates Strategy**
+   - Reviews all analyst reports
+   - Considers the debate outcome
+   - Proposes a specific trading action
+
+4. **Risk Team Evaluates**
+   - Three perspectives: aggressive, conservative, balanced
+   - Debate the appropriate risk level
+   - Risk Manager makes final assessment
+
+5. **Final Decision**
+   - **BUY**: Purchase the stock
+   - **SELL**: Sell the stock
+   - **HOLD**: Keep current position
+
+---
+
+## Supported Markets & Symbols
+
+| Market | Symbol Format | Example | Price Data | Fundamentals |
+|--------|--------------|---------|------------|--------------|
+| **US Stocks** | Ticker | `AAPL`, `MSFT`, `GOOGL` | ✅ | ✅ |
+| **Indian Stocks (NSE)** | Ticker.NS | `RELIANCE.NS`, `TCS.NS` | ✅ | ✅ |
+| **Indian Stocks (BSE)** | Ticker.BO | `RELIANCE.BO` | ✅ | ✅ |
+| **US Indices** | ^Symbol | `^GSPC` (S&P 500) | ✅ | ❌ |
+| **Indian Indices** | ^Symbol | `^NSEI` (Nifty 50) | ✅ | ❌ |
+
+**Note**: Indices don't have fundamental data (balance sheets, etc.) because they're not individual companies.
+
+### Common Indian Symbols
+```
+RELIANCE.NS    - Reliance Industries
+TCS.NS         - Tata Consultancy Services
+HDFCBANK.NS    - HDFC Bank
+INFY.NS        - Infosys
+ICICIBANK.NS   - ICICI Bank
+^NSEI          - Nifty 50 Index
+^BSESN         - Sensex Index
+```
+
+---
+
+## Web UI (Bloomberg Terminal Style)
+
+The Streamlit UI provides a professional trading terminal interface:
+
+```bash
+streamlit run tradingagents/ui/app.py
+```
+
+**Features:**
+- Dark theme with orange accents (Bloomberg-inspired)
+- Real-time pipeline progress tracking
+- Collapsible analyst reports
+- Investment debate visualization (Bull vs Bear)
+- Risk assessment panel (Risky vs Safe vs Neutral)
+- Large BUY/SELL/HOLD decision badge
+
+---
 
 <div align="center">
 <a href="https://www.star-history.com/#TauricResearch/TradingAgents&Date">
@@ -112,13 +264,38 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-### Required APIs
+### Option A: Claude Code (Free with Pro Subscription) - RECOMMENDED
 
-You will need the OpenAI API for all the agents, and [Alpha Vantage API](https://www.alphavantage.co/support/#api-key) for fundamental and news data (default configuration).
+If you have a Claude Pro subscription, you can use Claude Code CLI with **no additional API costs**:
+
+```bash
+# 1. Install Claude Code CLI
+npm install -g @anthropic-ai/claude-code
+
+# 2. Authenticate (run once)
+claude
+
+# 3. That's it! No API keys needed.
+```
+
+The default configuration (`tradingagents/default_config.py`) is already set up to use:
+- **LLM**: Claude Code CLI (your Pro subscription)
+- **Stock Data**: yfinance (free)
+- **News**: Google News (free)
+- **Fundamentals**: yfinance (free)
+
+### Option B: OpenAI/Anthropic API (Original Setup)
+
+If you prefer to use paid APIs:
 
 ```bash
 export OPENAI_API_KEY=$YOUR_OPENAI_API_KEY
 export ALPHA_VANTAGE_API_KEY=$YOUR_ALPHA_VANTAGE_API_KEY
+```
+
+Then update `tradingagents/default_config.py`:
+```python
+"llm_provider": "openai",  # Change from "claude-code"
 ```
 
 Alternatively, you can create a `.env` file in the project root with your API keys (see `.env.example` for reference):
@@ -127,10 +304,18 @@ cp .env.example .env
 # Edit .env with your actual API keys
 ```
 
-**Note:** We are happy to partner with Alpha Vantage to provide robust API support for TradingAgents. You can get a free AlphaVantage API [here](https://www.alphavantage.co/support/#api-key), TradingAgents-sourced requests also have increased rate limits to 60 requests per minute with no daily limits. Typically the quota is sufficient for performing complex tasks with TradingAgents thanks to Alpha Vantage’s open-source support program. If you prefer to use OpenAI for these data sources instead, you can modify the data vendor settings in `tradingagents/default_config.py`.
+**Note:** We are happy to partner with Alpha Vantage to provide robust API support for TradingAgents. You can get a free AlphaVantage API [here](https://www.alphavantage.co/support/#api-key), TradingAgents-sourced requests also have increased rate limits to 60 requests per minute with no daily limits. Typically the quota is sufficient for performing complex tasks with TradingAgents thanks to Alpha Vantage's open-source support program. If you prefer to use OpenAI for these data sources instead, you can modify the data vendor settings in `tradingagents/default_config.py`.
 
-### CLI Usage
+### Usage Options
 
+#### Option 1: Web UI (Recommended)
+Run the Bloomberg-style Streamlit dashboard:
+```bash
+streamlit run tradingagents/ui/app.py
+```
+Open http://localhost:8502 in your browser. Enter a ticker, select analysts, and click "Run Analysis".
+
+#### Option 2: Command Line Interface
 You can also try out the CLI directly by running:
 ```bash
 python -m cli.main
@@ -165,10 +350,15 @@ To use TradingAgents inside your code, you can import the `tradingagents` module
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 
+# Uses Claude Code by default (free with Pro subscription)
 ta = TradingAgentsGraph(debug=True, config=DEFAULT_CONFIG.copy())
 
-# forward propagate
-_, decision = ta.propagate("NVDA", "2024-05-10")
+# Analyze a US stock
+_, decision = ta.propagate("AAPL", "2025-01-15")
+print(decision)  # Output: BUY, SELL, or HOLD
+
+# Analyze an Indian stock
+_, decision = ta.propagate("RELIANCE.NS", "2025-01-15")
 print(decision)
 ```
 
@@ -180,23 +370,31 @@ from tradingagents.default_config import DEFAULT_CONFIG
 
 # Create a custom config
 config = DEFAULT_CONFIG.copy()
-config["deep_think_llm"] = "gpt-4.1-nano"  # Use a different model
-config["quick_think_llm"] = "gpt-4.1-nano"  # Use a different model
-config["max_debate_rounds"] = 1  # Increase debate rounds
 
-# Configure data vendors (default uses yfinance and Alpha Vantage)
+# Option 1: Use Claude Code (default - free with Pro subscription)
+config["llm_provider"] = "claude-code"
+
+# Option 2: Use OpenAI API (requires OPENAI_API_KEY)
+# config["llm_provider"] = "openai"
+# config["deep_think_llm"] = "gpt-4o"
+# config["quick_think_llm"] = "gpt-4o-mini"
+
+# Adjust debate rounds
+config["max_debate_rounds"] = 1
+
+# Configure data vendors (all free by default)
 config["data_vendors"] = {
-    "core_stock_apis": "yfinance",           # Options: yfinance, alpha_vantage, local
-    "technical_indicators": "yfinance",      # Options: yfinance, alpha_vantage, local
-    "fundamental_data": "alpha_vantage",     # Options: openai, alpha_vantage, local
-    "news_data": "alpha_vantage",            # Options: openai, alpha_vantage, google, local
+    "core_stock_apis": "yfinance",           # FREE - Yahoo Finance
+    "technical_indicators": "yfinance",      # FREE - Yahoo Finance
+    "fundamental_data": "yfinance",          # FREE - Yahoo Finance
+    "news_data": "google",                   # FREE - Google News
 }
 
 # Initialize with custom config
 ta = TradingAgentsGraph(debug=True, config=config)
 
-# forward propagate
-_, decision = ta.propagate("NVDA", "2024-05-10")
+# Analyze any supported symbol
+_, decision = ta.propagate("TCS.NS", "2025-01-15")  # Indian stock
 print(decision)
 ```
 

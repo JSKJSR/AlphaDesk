@@ -28,7 +28,7 @@ DEFAULT_CONFIG = {
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
-        "get_fundamentals": "alpha_vantage",  # Requires ALPHA_VANTAGE_API_KEY (free tier available)
-        "get_global_news": "google",          # Use Google News for global news
+        "get_fundamentals": "yfinance",       # FREE - Yahoo Finance company info
+        "get_global_news": "google",          # FREE - Google News for global news
     },
 }
