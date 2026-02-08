@@ -25,29 +25,46 @@
 
 ---
 
-# TradingAgents: Multi-Agents LLM Financial Trading Framework
+# AlphaDesk: AI-Powered Investment Research
 
-> 🎉 **TradingAgents** officially released! We have received numerous inquiries about the work, and we would like to express our thanks for the enthusiasm in our community.
->
-> So we decided to fully open-source the framework. Looking forward to building impactful projects with you!
+> **α AlphaDesk** - Professional investment research powered by multi-agent AI.
+> Get Wall Street-grade analysis with your Claude Pro subscription.
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://alphadesk.streamlit.app)
 
 ---
 
-## Claude Code Edition (No API Keys Required!)
+## Features
 
-This fork has been modified to work with **Claude Code CLI** instead of paid APIs. If you have a Claude Pro subscription, you can run the entire multi-agent analysis **for free** - no OpenAI or Anthropic API keys needed!
+- **Investment Bank-Style Reports** - Goldman Sachs-inspired design with professional typography
+- **Multi-Agent Analysis** - 4 specialized AI analysts (Market, Sentiment, News, Fundamentals)
+- **Symbol Resolution** - Enter "RELIANCE" and it auto-resolves to "RELIANCE.NS"
+- **Analysis Caching** - 24-hour cache for instant repeated queries
+- **No API Keys** - Uses Claude Code CLI with your Claude Pro subscription
 
-### Quick Start
+---
+
+## Quick Start
 
 ```bash
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Run the Bloomberg-style Web UI
+# 2. Run the AlphaDesk Web UI
 streamlit run tradingagents/ui/app.py
 
 # 3. Open http://localhost:8502 in your browser
 ```
+
+## Deploy to Streamlit Cloud
+
+1. Fork this repo to your GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Click "New app" → Select your fork
+4. Set main file: `tradingagents/ui/app.py`
+5. Deploy!
+
+> **Note**: Streamlit Cloud deployment requires Claude Code CLI to be available on the server. For cloud deployment, you may need to configure API-based authentication instead.
 
 ### What's Different in This Fork?
 
