@@ -2,16 +2,24 @@
 Apple-style Landing Page Components for AlphaDesk.
 
 Minimalist design with clean typography, generous whitespace,
-and clear call-to-action elements.
+and clear call-to-action elements. Supports both Claude CLI and API key auth.
 """
 
 import streamlit as st
 from typing import Callable, Optional
-from .auth import AuthStatus, get_connection_status_display
+from .auth import (
+    AuthStatus,
+    AuthMethod,
+    get_connection_status_display,
+    validate_anthropic_api_key,
+    get_api_key_instructions,
+    check_claude_installed,
+)
 
 
 def render_landing_page(on_connect: Callable, auth_status: AuthStatus = AuthStatus.UNKNOWN,
-                        error_message: str = None, instructions: str = None):
+                        error_message: str = None, instructions: str = None,
+                        on_api_key_submit: Callable = None):
     """
     Render the complete landing page.
 
@@ -20,16 +28,18 @@ def render_landing_page(on_connect: Callable, auth_status: AuthStatus = AuthStat
         auth_status: Current authentication status
         error_message: Optional error message to display
         instructions: Optional setup instructions to display
+        on_api_key_submit: Callback when API key is submitted
     """
-    render_hero_section(on_connect, auth_status, error_message, instructions)
+    render_hero_section(on_connect, auth_status, error_message, instructions, on_api_key_submit)
     render_workflow_section()
     render_features_section()
     render_markets_section()
-    render_footer_cta(on_connect, auth_status)
+    render_footer_cta(on_connect, auth_status, on_api_key_submit)
 
 
 def render_hero_section(on_connect: Callable, auth_status: AuthStatus,
-                        error_message: str = None, instructions: str = None):
+                        error_message: str = None, instructions: str = None,
+                        on_api_key_submit: Callable = None):
     """Render the hero section with main CTA."""
 
     # Hero container
@@ -48,24 +58,79 @@ def render_hero_section(on_connect: Callable, auth_status: AuthStatus,
         </div>
     """, unsafe_allow_html=True)
 
-    # Connection status and button
+    # Connection options
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         status_display = get_connection_status_display(auth_status)
 
-        if auth_status == AuthStatus.CONNECTED:
+        if auth_status in [AuthStatus.CONNECTED, AuthStatus.API_KEY_VALID]:
             st.success(f"{status_display['icon']} {status_display['title']}")
         elif auth_status == AuthStatus.CHECKING:
             st.info("⏳ Verifying connection...")
         else:
-            if st.button("🔗 Connect Your Claude Account", key="hero_connect",
-                         use_container_width=True, type="primary"):
-                on_connect()
+            # Show auth options in tabs
+            cli_available = check_claude_installed()
+
+            if cli_available:
+                tab1, tab2 = st.tabs(["🔗 Claude CLI", "🔑 API Key"])
+            else:
+                tab1, tab2 = st.tabs(["🔑 API Key", "🔗 Claude CLI"])
+
+            # Claude CLI tab
+            with (tab1 if cli_available else tab2):
+                st.markdown("""
+                    <p style="font-size: 0.9rem; color: #86868b; margin-bottom: 1rem;">
+                        Use your Claude Pro subscription via Claude CLI (recommended for local use)
+                    </p>
+                """, unsafe_allow_html=True)
+
+                if cli_available:
+                    if st.button("Connect Claude CLI", key="hero_connect_cli",
+                                 use_container_width=True, type="primary"):
+                        on_connect()
+                else:
+                    st.warning("Claude CLI not detected on this system")
+                    st.markdown("""
+                        **Install Claude CLI:**
+                        ```bash
+                        npm install -g @anthropic-ai/claude-code
+                        ```
+                        Then run `claude` to authenticate.
+                    """)
+
+            # API Key tab
+            with (tab2 if cli_available else tab1):
+                st.markdown("""
+                    <p style="font-size: 0.9rem; color: #86868b; margin-bottom: 1rem;">
+                        Use your Anthropic API key (works on Streamlit Cloud)
+                    </p>
+                """, unsafe_allow_html=True)
+
+                api_key = st.text_input(
+                    "Anthropic API Key",
+                    type="password",
+                    placeholder="sk-ant-...",
+                    key="landing_api_key",
+                    help="Get your API key from console.anthropic.com"
+                )
+
+                if st.button("Connect with API Key", key="hero_connect_api",
+                             use_container_width=True,
+                             type="primary" if not cli_available else "secondary"):
+                    if api_key:
+                        if on_api_key_submit:
+                            on_api_key_submit(api_key)
+                    else:
+                        st.error("Please enter your API key")
+
+                with st.expander("How to get an API key"):
+                    st.markdown(get_api_key_instructions())
 
             # Show error if any
             if error_message and auth_status in [AuthStatus.NOT_INSTALLED,
                                                   AuthStatus.NOT_AUTHENTICATED,
-                                                  AuthStatus.ERROR]:
+                                                  AuthStatus.ERROR,
+                                                  AuthStatus.API_KEY_INVALID]:
                 st.error(f"{status_display['icon']} **{status_display['title']}**: {error_message}")
 
                 if instructions:
@@ -147,7 +212,7 @@ def render_features_section():
         ("🤖", "Multi-Agent Analysis", "Four specialized AI agents analyze different aspects of a stock, providing comprehensive coverage like a professional research team."),
         ("⚔️", "Bull vs Bear Debate", "AI agents debate both sides of the investment case, ensuring balanced analysis and surfacing key risks and opportunities."),
         ("🎯", "Risk Assessment", "Three risk perspectives (aggressive, conservative, balanced) help you understand the risk-reward profile."),
-        ("🔐", "Your Claude Account", "Uses your own Claude subscription. No API keys needed. Your data stays between you and Claude."),
+        ("🔐", "Flexible Authentication", "Use Claude CLI with your Pro subscription, or connect via API key for cloud deployment."),
     ]
 
     for i, (icon, title, desc) in enumerate(features):
@@ -177,9 +242,9 @@ def render_markets_section():
     cols = st.columns(4)
     markets = [
         ("🇺🇸", "US Stocks", "AAPL, MSFT, GOOGL"),
-        ("🇮🇳", "India NSE", "RELIANCE.NS, TCS.NS"),
-        ("🇮🇳", "India BSE", "RELIANCE.BO, TCS.BO"),
-        ("📈", "Indices", "^GSPC, ^NSEI"),
+        ("🇮🇳", "India NSE", "RELIANCE, TCS"),
+        ("🇮🇳", "India BSE", "RELIANCE.BO"),
+        ("📈", "Indices", "NIFTY, SENSEX"),
     ]
 
     for col, (flag, name, examples) in zip(cols, markets):
@@ -193,7 +258,8 @@ def render_markets_section():
             """, unsafe_allow_html=True)
 
 
-def render_footer_cta(on_connect: Callable, auth_status: AuthStatus):
+def render_footer_cta(on_connect: Callable, auth_status: AuthStatus,
+                      on_api_key_submit: Callable = None):
     """Render the footer call-to-action."""
 
     st.markdown("---")
@@ -210,21 +276,25 @@ def render_footer_cta(on_connect: Callable, auth_status: AuthStatus):
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if auth_status == AuthStatus.CONNECTED:
+        if auth_status in [AuthStatus.CONNECTED, AuthStatus.API_KEY_VALID]:
             if st.button("🚀 Start Analyzing", key="footer_start",
                          use_container_width=True, type="primary"):
                 st.session_state.show_landing = False
                 st.rerun()
         else:
-            if st.button("🔗 Connect Claude Account", key="footer_connect",
-                         use_container_width=True, type="primary"):
-                on_connect()
+            cli_available = check_claude_installed()
+            if cli_available:
+                if st.button("🔗 Connect Claude Account", key="footer_connect",
+                             use_container_width=True, type="primary"):
+                    on_connect()
+            else:
+                st.info("Enter your API key above to get started")
 
     # Footer info
     st.markdown("""
         <div style="text-align: center; padding: 2rem 1rem; margin-top: 2rem;">
             <p style="font-size: 0.8rem; color: #86868b; max-width: 600px; margin: 0 auto 1rem; line-height: 1.6;">
-                TradingAgents is for informational purposes only. Not financial advice.
+                AlphaDesk is for informational purposes only. Not financial advice.
                 Always do your own research before making investment decisions.
             </p>
             <p style="font-size: 0.75rem; color: #aeaeb2;">

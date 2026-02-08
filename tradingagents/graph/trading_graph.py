@@ -29,7 +29,7 @@ except ImportError:
 from langgraph.prebuilt import ToolNode
 
 # Claude Code CLI wrapper (uses Claude Pro subscription instead of API)
-from tradingagents.llm import ClaudeCodeChat
+from tradingagents.llm import ClaudeCodeChat, AnthropicAPIChat
 
 from tradingagents.agents import *
 from tradingagents.default_config import DEFAULT_CONFIG
@@ -98,6 +98,12 @@ class TradingAgentsGraph:
             # Long timeouts and high max_turns needed for multi-agent analysis
             self.deep_thinking_llm = ClaudeCodeChat(timeout=900, max_turns=15)   # Deep thinking with more turns
             self.quick_thinking_llm = ClaudeCodeChat(timeout=600, max_turns=10)  # Quick tasks
+        elif provider == "anthropic-api":
+            # Use Anthropic API directly (requires ANTHROPIC_API_KEY env var)
+            deep_model = self.config.get("deep_think_llm", "claude-3-5-sonnet-20241022")
+            quick_model = self.config.get("quick_think_llm", "claude-3-haiku-20240307")
+            self.deep_thinking_llm = AnthropicAPIChat(model_name=deep_model, timeout=300)
+            self.quick_thinking_llm = AnthropicAPIChat(model_name=quick_model, timeout=120)
         elif provider in ("openai", "ollama", "openrouter"):
             if ChatOpenAI is None:
                 raise ImportError("langchain-openai not installed. Run: pip install langchain-openai")

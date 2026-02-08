@@ -8,12 +8,13 @@ DEFAULT_CONFIG = {
         os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
         "dataflows/data_cache",
     ),
-    # LLM settings - Using Claude Code CLI (your Claude Pro subscription)
-    # No API key required! Uses your authenticated Claude Code CLI
+    # LLM settings - Supports two modes:
+    # 1. "claude-code" - Uses Claude Code CLI with your Claude Pro subscription (no API key needed)
+    # 2. "anthropic-api" - Uses Anthropic API directly (requires ANTHROPIC_API_KEY)
     "llm_provider": "claude-code",
-    "deep_think_llm": "claude-code",      # Not used - Claude Code uses your subscription model
-    "quick_think_llm": "claude-code",     # Not used - Claude Code uses your subscription model
-    "backend_url": None,                   # Not used for claude-code
+    "deep_think_llm": "claude-3-5-sonnet-20241022",  # Used for anthropic-api mode
+    "quick_think_llm": "claude-3-haiku-20240307",    # Used for anthropic-api mode
+    "backend_url": None,                              # Not used
     # Debate and discussion settings
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,

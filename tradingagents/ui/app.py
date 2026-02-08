@@ -19,8 +19,13 @@ sys.path.insert(0, str(project_root))
 from tradingagents.ui.styles import INVESTMENT_REPORT_CSS
 from tradingagents.ui.auth import (
     AuthStatus,
+    AuthMethod,
     verify_claude_connection,
+    validate_anthropic_api_key,
+    get_best_auth_method,
+    check_claude_installed,
 )
+import os
 from tradingagents.ui.landing import render_landing_page
 from tradingagents.ui.components import (
     render_report_cover,
@@ -67,16 +72,35 @@ if 'auth_instructions' not in st.session_state:
     st.session_state.auth_instructions = None
 if 'startup_check_done' not in st.session_state:
     st.session_state.startup_check_done = False
+if 'auth_method' not in st.session_state:
+    st.session_state.auth_method = AuthMethod.NONE
+if 'api_key' not in st.session_state:
+    st.session_state.api_key = ""
 
 # ========== AUTO-VERIFY ON STARTUP ==========
-# Automatically check Claude connection on first load
+# Automatically check for available auth methods on first load
 if not st.session_state.startup_check_done:
     st.session_state.startup_check_done = True
-    result = verify_claude_connection()
-    if result['status'] == AuthStatus.CONNECTED:
-        st.session_state.auth_status = AuthStatus.CONNECTED
-        st.session_state.claude_verified = True
-        st.session_state.show_landing = False
+
+    # Check for API key in environment first (for Streamlit Cloud)
+    env_api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if env_api_key:
+        validation = validate_anthropic_api_key(env_api_key)
+        if validation['valid']:
+            st.session_state.auth_status = AuthStatus.API_KEY_VALID
+            st.session_state.auth_method = AuthMethod.ANTHROPIC_API
+            st.session_state.api_key = env_api_key
+            st.session_state.claude_verified = True
+            st.session_state.show_landing = False
+
+    # Otherwise check CLI
+    if not st.session_state.claude_verified:
+        result = verify_claude_connection()
+        if result['status'] == AuthStatus.CONNECTED:
+            st.session_state.auth_status = AuthStatus.CONNECTED
+            st.session_state.auth_method = AuthMethod.CLAUDE_CLI
+            st.session_state.claude_verified = True
+            st.session_state.show_landing = False
 
 # Analysis states
 if 'result' not in st.session_state:
@@ -101,9 +125,9 @@ if 'date_str' not in st.session_state:
     st.session_state.date_str = date.today().strftime("%Y-%m-%d")
 
 
-# ========== AUTH CALLBACK ==========
+# ========== AUTH CALLBACKS ==========
 def handle_connect():
-    """Handle the Connect button click."""
+    """Handle the Connect button click for Claude CLI."""
     st.session_state.auth_status = AuthStatus.CHECKING
     st.session_state.auth_error = None
     st.session_state.auth_instructions = None
@@ -114,11 +138,35 @@ def handle_connect():
     st.session_state.auth_status = result['status']
 
     if result['status'] == AuthStatus.CONNECTED:
+        st.session_state.auth_method = AuthMethod.CLAUDE_CLI
         st.session_state.claude_verified = True
         st.session_state.show_landing = False
     else:
         st.session_state.auth_error = result.get('details', result.get('message'))
         st.session_state.auth_instructions = result.get('instructions')
+
+    st.rerun()
+
+
+def handle_api_key_submit(api_key: str):
+    """Handle API key submission."""
+    st.session_state.auth_status = AuthStatus.CHECKING
+    st.session_state.auth_error = None
+
+    # Validate API key
+    validation = validate_anthropic_api_key(api_key)
+
+    if validation['valid']:
+        st.session_state.auth_status = AuthStatus.API_KEY_VALID
+        st.session_state.auth_method = AuthMethod.ANTHROPIC_API
+        st.session_state.api_key = api_key
+        st.session_state.claude_verified = True
+        st.session_state.show_landing = False
+        # Also set environment variable for the session
+        os.environ['ANTHROPIC_API_KEY'] = api_key
+    else:
+        st.session_state.auth_status = AuthStatus.API_KEY_INVALID
+        st.session_state.auth_error = validation['message']
 
     st.rerun()
 
@@ -137,7 +185,8 @@ if st.session_state.show_landing and not st.session_state.claude_verified:
         on_connect=handle_connect,
         auth_status=st.session_state.auth_status,
         error_message=st.session_state.auth_error,
-        instructions=st.session_state.auth_instructions
+        instructions=st.session_state.auth_instructions,
+        on_api_key_submit=handle_api_key_submit
     )
 
 else:
@@ -152,13 +201,21 @@ else:
 
         # Connection status indicator
         if st.session_state.claude_verified:
-            st.markdown("""
+            auth_method = st.session_state.auth_method
+            if auth_method == AuthMethod.ANTHROPIC_API:
+                method_label = "API Key"
+                method_icon = "🔑"
+            else:
+                method_label = "Claude CLI"
+                method_icon = "🔗"
+
+            st.markdown(f"""
             <div style="display: flex; align-items: center; gap: 0.5rem;
                         padding: 0.5rem 0.75rem; background: var(--rec-buy-bg);
                         border: 1px solid var(--rec-buy); border-radius: 8px;
                         margin-bottom: 1rem; font-size: 0.8rem;">
-                <span style="color: var(--rec-buy);">+</span>
-                <span style="color: var(--rec-buy); font-weight: 500;">Claude Connected</span>
+                <span>{method_icon}</span>
+                <span style="color: var(--rec-buy); font-weight: 500;">Connected via {method_label}</span>
             </div>
             """, unsafe_allow_html=True)
 
@@ -333,7 +390,15 @@ else:
             from tradingagents.default_config import DEFAULT_CONFIG
 
             config = DEFAULT_CONFIG.copy()
-            config['llm_provider'] = 'claude-code'
+
+            # Set LLM provider based on auth method
+            if st.session_state.auth_method == AuthMethod.ANTHROPIC_API:
+                config['llm_provider'] = 'anthropic-api'
+                # Ensure API key is in environment
+                if st.session_state.api_key:
+                    os.environ['ANTHROPIC_API_KEY'] = st.session_state.api_key
+            else:
+                config['llm_provider'] = 'claude-code'
 
             graph = TradingAgentsGraph(
                 selected_analysts=selected_analysts,
